@@ -17,6 +17,9 @@
 			membershipExceptions = (
 				Actions.sks,
 				Assets.xcassets,
+				Engine/Difficulty.swift,
+				Engine/SudokuBoard.swift,
+				Game/GameCommand.swift,
 				GameScene.sks,
 				GameScene.swift,
 			);
@@ -34,6 +37,9 @@
 			membershipExceptions = (
 				Actions.sks,
 				Assets.xcassets,
+				Engine/Difficulty.swift,
+				Engine/SudokuBoard.swift,
+				Game/GameCommand.swift,
 				GameScene.sks,
 				GameScene.swift,
 			);
