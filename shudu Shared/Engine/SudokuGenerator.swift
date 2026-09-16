@@ -78,8 +78,13 @@ nonisolated enum SudokuGenerator: Sendable {
         var k = 0
         while Date() <= deadline, k < holes.count {
             if !isHarder(SudokuSolver.rate(givens: givens), than: target) { return }
-            givens[holes[k]] = solution[holes[k]]
+            let i = holes[k]
             k += 1
+            givens[i] = solution[i]
+            // One cell can jump past the requested band (hard→easy while targeting medium).
+            if isEasier(SudokuSolver.rate(givens: givens), than: target) {
+                givens[i] = nil
+            }
         }
     }
 
@@ -102,6 +107,11 @@ nonisolated enum SudokuGenerator: Sendable {
                 let saved = givens[i]
                 givens[i] = nil
                 if SudokuSolver.countSolutions(values: givens, limit: 2) == 1 {
+                    // One cell can jump past the requested band (easy→hard while targeting medium).
+                    if isHarder(SudokuSolver.rate(givens: givens), than: target) {
+                        givens[i] = saved
+                        continue
+                    }
                     progressed = true
                     break
                 }

@@ -11,6 +11,13 @@ let package = Package(
         .target(
             name: "SudokuCore",
             path: "Shared",
+            exclude: [
+                "UI",
+                "GameScene.swift",
+                "GameScene.sks",
+                "Actions.sks",
+                "Assets.xcassets"
+            ],
             sources: ["Engine", "Game"]
         ),
         .testTarget(
