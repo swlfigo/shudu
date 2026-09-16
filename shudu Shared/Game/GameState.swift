@@ -26,6 +26,10 @@ nonisolated struct GameState: Equatable, Sendable {
     var isGenerating: Bool
     var generationID: UInt
     var overlay: Overlay
+    var pendingDifficulty: Difficulty?
+    var generationFailed: Bool
+    var isInBackground: Bool
+    var timerStarted: Bool
 
     var conflictIndices: Set<Int> {
         var result = Set<Int>()
@@ -44,6 +48,18 @@ nonisolated struct GameState: Equatable, Sendable {
             && conflictIndices.isEmpty
     }
 
+    var formattedElapsed: String {
+        let t = Int(elapsed)
+        if t >= 3600 {
+            return String(format: "%d:%02d:%02d", t/3600, (t%3600)/60, t%60)
+        }
+        return String(format: "%d:%02d", t/60, t%60)
+    }
+
+    private var ignoresBoardInput: Bool {
+        overlay != .none || isGenerating
+    }
+
     static func newSession() -> GameState {
         GameState(
             puzzle: nil,
@@ -58,31 +74,53 @@ nonisolated struct GameState: Equatable, Sendable {
             redoStack: [],
             isGenerating: false,
             generationID: 1,
-            overlay: .newGame(allowsCancel: false)
+            overlay: .newGame(allowsCancel: false),
+            pendingDifficulty: nil,
+            generationFailed: false,
+            isInBackground: false,
+            timerStarted: false
         )
     }
 
     mutating func dispatch(_ action: GameAction) {
         switch action {
         case .selectCell(let index):
+            guard !ignoresBoardInput else { return }
             selectCell(index)
         case .tapDigit(let digit):
+            guard !ignoresBoardInput else { return }
             tapDigit(digit)
         case .clear:
+            guard !ignoresBoardInput else { return }
             clear()
         case .toggleNotes:
+            guard !ignoresBoardInput else { return }
             isNotesMode.toggle()
-        case .applyGenerated(let puzzle, generationID: _):
-            applyGenerated(puzzle)
+        case .applyGenerated(let puzzle, let generationID):
+            applyGenerated(puzzle, generationID: generationID)
         case .hint:
+            guard !ignoresBoardInput else { return }
             hint()
         case .undo:
+            guard !ignoresBoardInput else { return }
             undo()
         case .redo:
+            guard !ignoresBoardInput else { return }
             redo()
-        case .newGame, .chooseDifficulty, .cancelOverlay,
-             .tick, .generationFailed, .appDidEnterBackground, .appDidBecomeActive:
-            break
+        case .newGame:
+            beginNewGame()
+        case .chooseDifficulty(let difficulty):
+            chooseDifficulty(difficulty)
+        case .cancelOverlay:
+            cancelOverlay()
+        case .tick(let delta):
+            tick(delta)
+        case .generationFailed(let generationID):
+            failGeneration(generationID: generationID)
+        case .appDidEnterBackground:
+            enterBackground()
+        case .appDidBecomeActive:
+            becomeActive()
         }
     }
 
@@ -111,6 +149,7 @@ nonisolated struct GameState: Equatable, Sendable {
                 hintDelta: 0,
                 conflictDelta: 0
             ))
+            markBoardChanged()
             return
         }
 
@@ -122,6 +161,7 @@ nonisolated struct GameState: Equatable, Sendable {
         let conflictDelta = conflictIndices.contains(index) ? 1 : 0
         conflictCount += conflictDelta
         pushUndo(UndoRecord(mutations: mutations, hintDelta: 0, conflictDelta: conflictDelta))
+        markBoardChanged()
         updateWin()
     }
 
@@ -152,6 +192,7 @@ nonisolated struct GameState: Equatable, Sendable {
         let mutations = writeDigit(digit, at: index)
         hintsRemaining -= 1
         pushUndo(UndoRecord(mutations: mutations, hintDelta: -1, conflictDelta: 0))
+        markBoardChanged()
         updateWin()
     }
 
@@ -198,10 +239,12 @@ nonisolated struct GameState: Equatable, Sendable {
             hintDelta: 0,
             conflictDelta: 0
         ))
+        markBoardChanged()
         updateWin()
     }
 
-    private mutating func applyGenerated(_ puzzle: Puzzle) {
+    private mutating func applyGenerated(_ puzzle: Puzzle, generationID: UInt) {
+        guard generationID == self.generationID else { return }
         self.puzzle = puzzle
         cells = puzzle.givens.map { given in
             if let value = given {
@@ -213,12 +256,77 @@ nonisolated struct GameState: Equatable, Sendable {
         conflictCount = 0
         elapsed = 0
         timerRunning = false
+        timerStarted = false
         undoStack = []
         redoStack = []
         selectedIndex = nil
         isNotesMode = false
         isGenerating = false
+        generationFailed = false
         overlay = .none
+    }
+
+    private mutating func beginNewGame() {
+        let allowsCancel = puzzle != nil && overlay != .win
+        overlay = .newGame(allowsCancel: allowsCancel)
+        pauseTimer()
+    }
+
+    private mutating func chooseDifficulty(_ difficulty: Difficulty) {
+        generationID += 1
+        isGenerating = true
+        pendingDifficulty = difficulty
+        generationFailed = false
+        let allowsCancel: Bool
+        if case .newGame(let current) = overlay {
+            allowsCancel = current
+        } else {
+            allowsCancel = puzzle != nil && overlay != .win
+        }
+        overlay = .newGame(allowsCancel: allowsCancel)
+        pauseTimer()
+    }
+
+    private mutating func cancelOverlay() {
+        guard !isGenerating else { return }
+        guard case .newGame(let allowsCancel) = overlay, allowsCancel else { return }
+        overlay = .none
+        resumeTimerIfNeeded()
+    }
+
+    private mutating func failGeneration(generationID: UInt) {
+        guard generationID == self.generationID else { return }
+        isGenerating = false
+        generationFailed = true
+    }
+
+    private mutating func tick(_ delta: TimeInterval) {
+        guard timerRunning else { return }
+        elapsed += delta
+    }
+
+    private mutating func enterBackground() {
+        isInBackground = true
+        pauseTimer()
+    }
+
+    private mutating func becomeActive() {
+        isInBackground = false
+        resumeTimerIfNeeded()
+    }
+
+    private mutating func markBoardChanged() {
+        timerStarted = true
+        resumeTimerIfNeeded()
+    }
+
+    private mutating func pauseTimer() {
+        timerRunning = false
+    }
+
+    private mutating func resumeTimerIfNeeded() {
+        guard overlay == .none, !isGenerating, !isInBackground, timerStarted, !isWon else { return }
+        timerRunning = true
     }
 
     private mutating func pushUndo(_ record: UndoRecord) {
