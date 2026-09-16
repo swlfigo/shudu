@@ -54,6 +54,18 @@ final class GameStateHintUndoTests: XCTestCase {
         XCTAssertEqual(s.cells[2].notes, [4])
     }
 
+    func testUndoRedo_doesNotChangeConflictCount() {
+        var s = makeState()
+        s.dispatch(.selectCell(2))
+        s.dispatch(.tapDigit(5)) // row0 already has given 5
+        XCTAssertEqual(s.conflictCount, 1)
+        s.dispatch(.undo)
+        XCTAssertEqual(s.conflictCount, 1)
+        XCTAssertNil(s.cells[2].value)
+        s.dispatch(.redo)
+        XCTAssertEqual(s.conflictCount, 1)
+    }
+
     func testWin_whenFilledWithoutConflicts() {
         var s = makeState()
         for i in 0..<81 where !s.cells[i].isGiven {

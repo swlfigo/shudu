@@ -159,7 +159,6 @@ nonisolated struct GameState: Equatable, Sendable {
         guard let record = undoStack.popLast() else { return }
         apply(record.mutations, forward: false)
         hintsRemaining -= record.hintDelta
-        conflictCount -= record.conflictDelta
         redoStack.append(record)
         updateWin()
     }
@@ -168,7 +167,6 @@ nonisolated struct GameState: Equatable, Sendable {
         guard let record = redoStack.popLast() else { return }
         apply(record.mutations, forward: true)
         hintsRemaining += record.hintDelta
-        conflictCount += record.conflictDelta
         undoStack.append(record)
         updateWin()
     }
