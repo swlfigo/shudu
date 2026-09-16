@@ -27,6 +27,9 @@
 				GameScene.swift,
 				UI/BoardNode.swift,
 				UI/CellNode.swift,
+				UI/HUDNode.swift,
+				UI/NewGameOverlayNode.swift,
+				UI/NumberPadNode.swift,
 				UI/Palette.swift,
 			);
 			target = 2CA4F32C305ADF0C00ED0AD1 /* shudu iOS */;
@@ -53,6 +56,9 @@
 				GameScene.swift,
 				UI/BoardNode.swift,
 				UI/CellNode.swift,
+				UI/HUDNode.swift,
+				UI/NewGameOverlayNode.swift,
+				UI/NumberPadNode.swift,
 				UI/Palette.swift,
 			);
 			target = 2CA4F33D305ADF0C00ED0AD1 /* shudu macOS */;

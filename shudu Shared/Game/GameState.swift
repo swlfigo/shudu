@@ -267,6 +267,7 @@ nonisolated struct GameState: Equatable, Sendable {
     }
 
     private mutating func beginNewGame() {
+        generationFailed = false
         let allowsCancel = puzzle != nil && overlay != .win
         overlay = .newGame(allowsCancel: allowsCancel)
         pauseTimer()
@@ -290,6 +291,7 @@ nonisolated struct GameState: Equatable, Sendable {
     private mutating func cancelOverlay() {
         guard !isGenerating else { return }
         guard case .newGame(let allowsCancel) = overlay, allowsCancel else { return }
+        generationFailed = false
         overlay = .none
         resumeTimerIfNeeded()
     }

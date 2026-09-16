@@ -107,7 +107,7 @@ final class CellNode: SKNode {
     }
 }
 
-private enum BoardFont {
+enum BoardFont {
     static let bold = pick(preferred: "Palatino-Bold", fallback: "Georgia-Bold")
     static let regular = pick(preferred: "Palatino-Roman", fallback: "Georgia")
 
