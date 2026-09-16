@@ -22,6 +22,7 @@
 				Engine/SudokuGenerator.swift,
 				Engine/SudokuSolver.swift,
 				Game/GameCommand.swift,
+				Game/GameState.swift,
 				GameScene.sks,
 				GameScene.swift,
 			);
@@ -44,6 +45,7 @@
 				Engine/SudokuGenerator.swift,
 				Engine/SudokuSolver.swift,
 				Game/GameCommand.swift,
+				Game/GameState.swift,
 				GameScene.sks,
 				GameScene.swift,
 			);

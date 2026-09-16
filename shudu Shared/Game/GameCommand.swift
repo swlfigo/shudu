@@ -1,5 +1,31 @@
+import Foundation
+
 nonisolated struct Cell: Equatable, Sendable {
-    var value: Int?
-    var isGiven: Bool
-    var notes: Set<Int>
+    var value: Int? = nil
+    var isGiven: Bool = false
+    var notes: Set<Int> = []
+}
+
+nonisolated enum Overlay: Equatable, Sendable {
+    case none
+    case newGame(allowsCancel: Bool)
+    case win
+}
+
+nonisolated enum GameAction: Equatable, Sendable {
+    case selectCell(Int)
+    case tapDigit(Int)
+    case clear
+    case toggleNotes
+    case hint
+    case undo
+    case redo
+    case newGame
+    case chooseDifficulty(Difficulty)
+    case cancelOverlay
+    case tick(TimeInterval)
+    case applyGenerated(Puzzle, generationID: UInt)
+    case generationFailed(generationID: UInt)
+    case appDidEnterBackground
+    case appDidBecomeActive
 }
