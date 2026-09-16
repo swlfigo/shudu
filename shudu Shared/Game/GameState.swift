@@ -74,7 +74,13 @@ nonisolated struct GameState: Equatable, Sendable {
             isNotesMode.toggle()
         case .applyGenerated(let puzzle, generationID: _):
             applyGenerated(puzzle)
-        case .hint, .undo, .redo, .newGame, .chooseDifficulty, .cancelOverlay,
+        case .hint:
+            hint()
+        case .undo:
+            undo()
+        case .redo:
+            redo()
+        case .newGame, .chooseDifficulty, .cancelOverlay,
              .tick, .generationFailed, .appDidEnterBackground, .appDidBecomeActive:
             break
         }
@@ -112,6 +118,14 @@ nonisolated struct GameState: Equatable, Sendable {
     }
 
     private mutating func placeDigit(_ digit: Int, at index: Int) {
+        let mutations = writeDigit(digit, at: index)
+        let conflictDelta = conflictIndices.contains(index) ? 1 : 0
+        conflictCount += conflictDelta
+        pushUndo(UndoRecord(mutations: mutations, hintDelta: 0, conflictDelta: conflictDelta))
+        updateWin()
+    }
+
+    private mutating func writeDigit(_ digit: Int, at index: Int) -> [Mutation] {
         let before = cells[index]
         var mutations: [Mutation] = []
         cells[index].value = digit
@@ -124,10 +138,54 @@ nonisolated struct GameState: Equatable, Sendable {
             cells[peer].notes.remove(digit)
             mutations.append(Mutation(index: peer, before: peerBefore, after: cells[peer]))
         }
+        return mutations
+    }
 
-        let conflictDelta = conflictIndices.contains(index) ? 1 : 0
-        conflictCount += conflictDelta
-        pushUndo(UndoRecord(mutations: mutations, hintDelta: 0, conflictDelta: conflictDelta))
+    private mutating func hint() {
+        guard hintsRemaining > 0, let puzzle else { return }
+        guard cells.contains(where: { $0.value == nil }) else { return }
+        let values = cells.map(\.value)
+        guard let index = SudokuSolver.findHintIndex(values: values) else { return }
+        guard cells.indices.contains(index), !cells[index].isGiven else { return }
+        guard puzzle.solution.indices.contains(index) else { return }
+        let digit = puzzle.solution[index]
+        let mutations = writeDigit(digit, at: index)
+        hintsRemaining -= 1
+        pushUndo(UndoRecord(mutations: mutations, hintDelta: -1, conflictDelta: 0))
+        updateWin()
+    }
+
+    private mutating func undo() {
+        guard let record = undoStack.popLast() else { return }
+        apply(record.mutations, forward: false)
+        hintsRemaining -= record.hintDelta
+        conflictCount -= record.conflictDelta
+        redoStack.append(record)
+        updateWin()
+    }
+
+    private mutating func redo() {
+        guard let record = redoStack.popLast() else { return }
+        apply(record.mutations, forward: true)
+        hintsRemaining += record.hintDelta
+        conflictCount += record.conflictDelta
+        undoStack.append(record)
+        updateWin()
+    }
+
+    private mutating func apply(_ mutations: [Mutation], forward: Bool) {
+        let sequence = forward ? mutations : mutations.reversed()
+        for mutation in sequence {
+            guard cells.indices.contains(mutation.index) else { continue }
+            cells[mutation.index] = forward ? mutation.after : mutation.before
+        }
+    }
+
+    private mutating func updateWin() {
+        if isWon {
+            overlay = .win
+            timerRunning = false
+        }
     }
 
     private mutating func clear() {
@@ -142,6 +200,7 @@ nonisolated struct GameState: Equatable, Sendable {
             hintDelta: 0,
             conflictDelta: 0
         ))
+        updateWin()
     }
 
     private mutating func applyGenerated(_ puzzle: Puzzle) {
