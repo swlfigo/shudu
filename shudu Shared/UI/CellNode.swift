@@ -101,6 +101,7 @@ final class CellNode: SKNode {
         } else {
             valueLabel.isHidden = true
             for (i, label) in noteLabels.enumerated() {
+                label.fontColor = Palette.note
                 label.isHidden = !cell.notes.contains(i + 1)
             }
         }

@@ -12,14 +12,13 @@ final class BoardNode: SKNode {
         for cell in cells {
             addChild(cell)
         }
-        gridLines.strokeColor = Palette.line
+        applyPalette()
         gridLines.fillColor = SKColor.clear
         gridLines.lineWidth = 0.5
         gridLines.lineCap = .butt
         gridLines.zPosition = 2
         addChild(gridLines)
 
-        boxLines.strokeColor = Palette.line
         boxLines.fillColor = SKColor.clear
         boxLines.lineWidth = 2
         boxLines.lineCap = .butt
@@ -29,6 +28,11 @@ final class BoardNode: SKNode {
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func applyPalette() {
+        gridLines.strokeColor = Palette.line
+        boxLines.strokeColor = Palette.line
     }
 
     func layout(side: CGFloat) {
@@ -60,6 +64,7 @@ final class BoardNode: SKNode {
     }
 
     func refresh(_ state: GameState) {
+        applyPalette()
         let selected = state.selectedIndex
         let conflicts = state.conflictIndices
         let selectedValue: Int?

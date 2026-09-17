@@ -49,7 +49,14 @@ final class NumberPadNode: SKNode {
         place(["hint", "newGame"], origin: .zero, size: CGSize(width: size.width, height: controlH), columns: 2, gap: gap)
     }
 
+    func applyPalette() {
+        for key in keys {
+            key.applyPalette()
+        }
+    }
+
     func refresh(_ state: GameState) {
+        applyPalette()
         keysByName["notes"]?.setNotesOn(state.isNotesMode)
         let boardFull = state.cells.allSatisfy { $0.value != nil }
         let hintOn = state.puzzle != nil && state.hintsRemaining > 0 && !boardFull
@@ -103,7 +110,7 @@ private final class KeyNode: SKNode {
 
         label.text = title
         label.fontName = BoardFont.regular
-        label.fontColor = Palette.paper
+        label.fontColor = Palette.keyText
         label.verticalAlignmentMode = .center
         label.horizontalAlignmentMode = .center
         label.zPosition = 1
@@ -122,6 +129,14 @@ private final class KeyNode: SKNode {
         label.position = CGPoint(x: size.width / 2, y: size.height / 2)
         let title = label.text ?? ""
         label.fontSize = title.count > 1 ? min(16, size.height * 0.36) : min(22, size.height * 0.5)
+    }
+
+    func applyPalette() {
+        fill.fillColor = identifier == "hint" ? Palette.hintKey : Palette.key
+        label.fontColor = Palette.keyText
+        if fill.lineWidth > 0 {
+            fill.strokeColor = Palette.noteOn
+        }
     }
 
     func setNotesOn(_ on: Bool) {

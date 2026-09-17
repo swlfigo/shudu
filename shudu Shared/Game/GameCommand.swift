@@ -10,6 +10,7 @@ nonisolated enum Overlay: Equatable, Sendable {
     case none
     case newGame(allowsCancel: Bool)
     case win
+    case settings
 }
 
 nonisolated enum GameAction: Equatable, Sendable {
@@ -21,6 +22,9 @@ nonisolated enum GameAction: Equatable, Sendable {
     case undo
     case redo
     case newGame
+    case openSettings
+    case closeSettings
+    case previewWin
     case chooseDifficulty(Difficulty)
     case cancelOverlay
     case tick(TimeInterval)

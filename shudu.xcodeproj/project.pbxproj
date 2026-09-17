@@ -31,6 +31,7 @@
 				UI/NewGameOverlayNode.swift,
 				UI/NumberPadNode.swift,
 				UI/Palette.swift,
+				UI/SettingsOverlayNode.swift,
 			);
 			target = 2CA4F32C305ADF0C00ED0AD1 /* shudu iOS */;
 		};
@@ -60,6 +61,7 @@
 				UI/NewGameOverlayNode.swift,
 				UI/NumberPadNode.swift,
 				UI/Palette.swift,
+				UI/SettingsOverlayNode.swift,
 			);
 			target = 2CA4F33D305ADF0C00ED0AD1 /* shudu macOS */;
 		};

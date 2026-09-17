@@ -10,6 +10,8 @@ import SpriteKit
 
 class GameViewController: NSViewController {
 
+    private var appearanceObservation: NSKeyValueObservation?
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -23,6 +25,12 @@ class GameViewController: NSViewController {
 
         skView.showsFPS = false
         skView.showsNodeCount = false
+
+        appearanceObservation = skView.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            DispatchQueue.main.async {
+                self?.gameScene?.applyAppearance()
+            }
+        }
     }
 
     override func viewDidAppear() {
@@ -31,6 +39,11 @@ class GameViewController: NSViewController {
             window.minSize = NSSize(width: 480, height: 640)
             window.makeFirstResponder(view)
         }
+        gameScene?.applyAppearance()
+    }
+
+    private var gameScene: GameScene? {
+        (view as? SKView)?.scene as? GameScene
     }
 
 }

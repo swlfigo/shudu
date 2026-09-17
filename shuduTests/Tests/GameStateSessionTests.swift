@@ -220,6 +220,37 @@ final class GameStateSessionTests: XCTestCase {
         XCTAssertNil(s.cells[2].value)
     }
 
+    func testOpenSettings_fromPlay_returnsToPlay() {
+        var s = makeState()
+        s.dispatch(.selectCell(2))
+        s.dispatch(.tapDigit(4))
+        XCTAssertTrue(s.timerRunning)
+        s.dispatch(.openSettings)
+        XCTAssertEqual(s.overlay, .settings)
+        XCTAssertFalse(s.timerRunning)
+        s.dispatch(.tapDigit(5))
+        XCTAssertEqual(s.cells[2].value, 4)
+        s.dispatch(.closeSettings)
+        XCTAssertEqual(s.overlay, .none)
+        XCTAssertTrue(s.timerRunning)
+    }
+
+    func testPreviewWin_showsWinOverlay() {
+        var s = GameState.newSession()
+        s.dispatch(.openSettings)
+        s.dispatch(.previewWin)
+        XCTAssertEqual(s.overlay, .win)
+        XCTAssertFalse(s.timerRunning)
+    }
+
+    func testOpenSettings_fromNewGame_returnsToPicker() {
+        var s = GameState.newSession()
+        s.dispatch(.openSettings)
+        XCTAssertEqual(s.overlay, .settings)
+        s.dispatch(.closeSettings)
+        XCTAssertEqual(s.overlay, .newGame(allowsCancel: false))
+    }
+
     func testGeneratingBlocksBoardInput() {
         var s = makeState()
         s.dispatch(.newGame)

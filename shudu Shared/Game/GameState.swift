@@ -26,6 +26,7 @@ nonisolated struct GameState: Equatable, Sendable {
     var isGenerating: Bool
     var generationID: UInt
     var overlay: Overlay
+    var overlayBeforeSettings: Overlay?
     var pendingDifficulty: Difficulty?
     var generationFailed: Bool
     var isInBackground: Bool
@@ -75,6 +76,7 @@ nonisolated struct GameState: Equatable, Sendable {
             isGenerating: false,
             generationID: 1,
             overlay: .newGame(allowsCancel: false),
+            overlayBeforeSettings: nil,
             pendingDifficulty: nil,
             generationFailed: false,
             isInBackground: false,
@@ -109,6 +111,12 @@ nonisolated struct GameState: Equatable, Sendable {
             redo()
         case .newGame:
             beginNewGame()
+        case .openSettings:
+            openSettings()
+        case .closeSettings:
+            closeSettings()
+        case .previewWin:
+            previewWin()
         case .chooseDifficulty(let difficulty):
             chooseDifficulty(difficulty)
         case .cancelOverlay:
@@ -263,7 +271,27 @@ nonisolated struct GameState: Equatable, Sendable {
         isNotesMode = false
         isGenerating = false
         generationFailed = false
+        overlayBeforeSettings = nil
         overlay = .none
+    }
+
+    private mutating func openSettings() {
+        if overlay == .settings { return }
+        overlayBeforeSettings = overlay
+        overlay = .settings
+        pauseTimer()
+    }
+
+    private mutating func closeSettings() {
+        guard overlay == .settings else { return }
+        overlay = overlayBeforeSettings ?? .none
+        overlayBeforeSettings = nil
+        resumeTimerIfNeeded()
+    }
+
+    private mutating func previewWin() {
+        overlay = .win
+        pauseTimer()
     }
 
     private mutating func beginNewGame() {
