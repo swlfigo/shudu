@@ -1,0 +1,7 @@
+.superpowers/
+.build/
+.swiftpm/
+xcuserdata/
+.DS_Store
+
+docs/superpowers/
